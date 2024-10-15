@@ -10,7 +10,6 @@ import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { Category } from 'src/categories/entities/category.entity';
 import { response } from 'src/utils/response.util';
-import { CreateCategoryDto } from 'src/categories/dto/create-category.dto';
 
 @Injectable()
 export class ProductsService {
@@ -39,7 +38,19 @@ export class ProductsService {
     });
 
     if (!category) {
-      throw new NotFoundException(`Category is not found!`);
+      throw new NotFoundException(
+        response(false, 'Category is not found', null),
+      );
+    }
+
+    const existingProduct = await this.productRepository.findOne({
+      where: { name: createProductDto.name },
+    });
+
+    if (existingProduct) {
+      throw new BadRequestException(
+        response(false, 'Product with the same name already exists', null),
+      );
     }
 
     const product = this.productRepository.create({
@@ -68,10 +79,12 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product is not found`);
+      throw new NotFoundException(
+        response(false, 'Product is not found', null),
+      );
     }
 
-    return response(true, `Fetching product with ID ${id}`, product);
+    return response(true, 'Fetching product', product);
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {
