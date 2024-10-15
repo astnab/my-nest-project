@@ -1,5 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Product } from 'src/products/entities/product.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 // category is an entity
@@ -9,6 +10,8 @@ export class Category {
   id: number;
 
   @Column()
-  //
   name: string;
+
+  @OneToMany(() => Product, (product) => product.category)
+  products: Product[];
 }

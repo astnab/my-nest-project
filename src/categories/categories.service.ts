@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { Repository } from 'typeorm';
 import { response } from 'src/utils/response.util';
+import { Product } from 'src/products/entities/product.entity';
 
 @Injectable()
 export class CategoriesService {
@@ -17,6 +18,8 @@ export class CategoriesService {
     // dependency injection -> accessing repository (interact with the queries)
     @InjectRepository(Category)
     private readonly categoriesRepository: Repository<Category>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
@@ -55,7 +58,7 @@ export class CategoriesService {
     if (!result) {
       throw new NotFoundException(response(false, 'ID not found', null));
     }
-    return response(true, 'Fetching data id', result);
+    return response(true, `Fetching category with ID ${id}`, result);
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
@@ -81,13 +84,28 @@ export class CategoriesService {
   async remove(id: number) {
     const category = await this.categoriesRepository.findOne({
       where: { id },
+      relations: ['products'],
     });
+
     if (!category) {
       throw new NotFoundException(
         response(false, 'Category is not found', null),
       );
     }
+
+    const deletedProduct = await this.productRepository.delete({
+      category: { id },
+    });
+
     const result = await this.categoriesRepository.remove(category);
-    return response(true, 'Data deleted', result);
+
+    return response(
+      true,
+      'Category and all its products are deleted succesfully',
+      {
+        deletedCategory: result,
+        deletedProduct: deletedProduct.affected, // count of deleted products
+      },
+    );
   }
 }
